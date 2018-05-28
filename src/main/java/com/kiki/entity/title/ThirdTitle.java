@@ -2,11 +2,11 @@ package com.kiki.entity.title;
 
 import java.util.Objects;
 
-public class SecondAbstractTitle extends AbstractTitle {
+public class ThirdTitle extends AbstractTitle {
 
     @Override
     public String toString() {
-        return "SecondAbstractTitle{" +
+        return "ThirdTitle{" +
                 "parentTitle='" + parentTitle + '\'' +
                 ", title='" + title + '\'' +
                 ", url='" + url + '\'' +
@@ -15,11 +15,12 @@ public class SecondAbstractTitle extends AbstractTitle {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof SecondAbstractTitle) {
-            SecondAbstractTitle st = (SecondAbstractTitle) obj;
-            return (Objects.equals((parentTitle + title + url), (st.getParentTitle() + st.getTitle() + st.getUrl())));
+        if (obj instanceof ThirdTitle) {
+            ThirdTitle tt = (ThirdTitle) obj;
+            return Objects.equals((parentTitle + title + url), (tt.getParentTitle() + tt.getTitle() + tt.getUrl()));
+        } else {
+            return false;
         }
-        return false;
     }
 
     @Override
