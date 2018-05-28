@@ -1,6 +1,7 @@
 import com.kiki.FirstTitle;
 import com.kiki.SecondTitle;
 import com.kiki.ThirdTitle;
+import com.kiki.entity.Constants;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -17,12 +18,16 @@ import org.jsoup.select.Elements;
 
 import java.io.*;
 import java.lang.reflect.Field;
+import java.nio.charset.Charset;
 import java.util.*;
 
 public class Main {
 
     final static String LOGIN_URL = "http://kb.tcmkb.cn:9104/member/user/ajax_login";
     final static String HOST = "http://kb.tcmkb.cn:9104";
+
+    final static String _HOST = "http://kb.tcmkb.cn";
+    final static int _PORT = 9104;
     /**
      * 中医养生知识库
      */
@@ -41,7 +46,7 @@ public class Main {
     }
 
     private static void login() {
-        HttpPost loginPost = new HttpPost(LOGIN_URL);
+        HttpPost loginPost = new HttpPost(encodeUrl(LOGIN_URL));
         List<NameValuePair> loginParams = new ArrayList<NameValuePair>();
         loginParams.add(new BasicNameValuePair("username", "nsynsy001"));
         loginParams.add(new BasicNameValuePair("password", "niu19920517"));
@@ -71,7 +76,7 @@ public class Main {
      * 存入常量+csv文件
      */
     private static void requestFirstTitle() {
-        HttpGet httpGet = new HttpGet(HEALTH_URL);
+        HttpGet httpGet = new HttpGet(encodeUrl(HEALTH_URL));
         CloseableHttpResponse homeResponse = null;
         try {
             homeResponse = httpClient.execute(httpGet);
@@ -108,9 +113,21 @@ public class Main {
         }
     }
 
+    private static String encodeUrl(String url) {
+//        String u;
+//        try {
+//            u = URLEncoder.encode(url, "UTF-8");
+//            System.out.println(u);
+//        } catch (UnsupportedEncodingException e) {
+//            e.printStackTrace();
+//            return url;
+//        }
+        return url;
+    }
+
     private static void requestSecondTitle() {
         for (FirstTitle ft : FIRST_TITLE) {
-            HttpGet httpGet = new HttpGet(HOST + ft.getUrl());
+            HttpGet httpGet = new HttpGet(encodeUrl(HOST + ft.getUrl()));
             CloseableHttpResponse homeResponse = null;
             try {
                 homeResponse = httpClient.execute(httpGet);
@@ -143,7 +160,7 @@ public class Main {
 
     private static void requestThirdTitle() {
         for (SecondTitle st : SECOND_TITLE) {
-            HttpGet httpGet = new HttpGet(HOST + st.getUrl());
+            HttpGet httpGet = new HttpGet(encodeUrl(HOST + st.getUrl()));
             CloseableHttpResponse response = null;
             try {
                 response = httpClient.execute(httpGet);
@@ -190,9 +207,9 @@ public class Main {
 
     private static void requestThirdTitle(String url, SecondTitle st) {
         System.out.println("翻页请求: " + url);
-        HttpGet httpGet = new HttpGet(HOST + url);
-        CloseableHttpResponse response = null;
         try {
+            HttpGet httpGet = new HttpGet(encodeUrl(HOST + url));
+            CloseableHttpResponse response = null;
             response = httpClient.execute(httpGet);
             System.out.println(response.getStatusLine());
             String s = EntityUtils.toString(response.getEntity(), "UTF-8");
@@ -220,13 +237,14 @@ public class Main {
         try {
             createHttpClient();
             login();
-            requestFirstTitle();
-            requestSecondTitle();
-            requestThirdTitle();
+//            requestFirstTitle();
+//            requestSecondTitle();
+//            requestThirdTitle();
+            pullData();
         } finally {
-            writeToCsv("first_title", FIRST_TITLE, FirstTitle.class);
-            writeToCsv("second_title", SECOND_TITLE, SecondTitle.class);
-            writeToCsv("third_title", THIRD_TITLE, ThirdTitle.class);
+//            writeToCsv("first_title", FIRST_TITLE, FirstTitle.class);
+//            writeToCsv("second_title", SECOND_TITLE, SecondTitle.class);
+//            writeToCsv("third_title", THIRD_TITLE, ThirdTitle.class);
         }
     }
 
@@ -258,6 +276,101 @@ public class Main {
             try {
                 if (bw != null) {
                     bw.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private static void pullData() {
+        BufferedReader br = null;
+        BufferedWriter bw = null;
+        FileWriter fw = null;
+        int lineNum = 0;
+        try {
+            File thirdTitleCsv = new File("third_title.csv");
+            br = new BufferedReader(new InputStreamReader(new FileInputStream(thirdTitleCsv), "GBK"));
+            bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("data.csv"), Charset.forName("GBK")));
+            Set<String> fieldsSet = new HashSet<>();
+            String line = null;
+            // 标题行先读了
+            br.readLine();
+            StringBuilder sb = null;
+            bw.write("title");
+            bw.write(",");
+            bw.write("methodName");
+            bw.write(",");
+            bw.write("url");
+            bw.write(",");
+            for (String field : Constants.FIELDS) {
+                bw.write(field);
+                bw.write(",");
+            }
+            bw.write("\n");
+            while ((line = br.readLine()) != null) {
+                String[] properties = line.split(",");
+                String title = properties[0];
+                String methodName = properties[1];
+                String url = properties[2];
+                HttpGet httpGet = new HttpGet(encodeUrl(HOST + url));
+                CloseableHttpResponse response;
+                response = httpClient.execute(httpGet);
+                System.out.println(response.getStatusLine());
+                String s = EntityUtils.toString(response.getEntity(), "UTF-8");
+                Document doc = Jsoup.parse(s);
+                Elements trElements = doc.select("table.table > tbody > tr");
+                sb = new StringBuilder();
+                int j = 0;
+                Map<String, String> tempMap = new HashMap<>();
+                for (Element trElement : trElements) {
+                    Elements tds = trElement.children();
+                    if (tds.size() >= 2) {
+                        String k = tds.get(0).text().trim();
+                        String v = tds.get(1).text().trim();
+                        // 将k,v写入csv
+                        fieldsSet.add(k);
+                        tempMap.put(k, v);
+                    } else {
+                        System.out.println("表格td格式有变: " + trElement);
+                    }
+                }
+                for (String field : Constants.FIELDS) {
+                    sb.append(tempMap.getOrDefault(field, " ")).append(",");
+                }
+                bw.write(title);
+                bw.write(",");
+                bw.write(methodName);
+                bw.write(",");
+                bw.write(url);
+                bw.write(",");
+                bw.write(sb.toString());
+                bw.write("\n");
+            }
+            System.out.println(fieldsSet);
+            System.out.println(fieldsSet.size());
+            fw = new FileWriter("temp");
+            fw.write(fieldsSet.toString());
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (br != null) {
+                    br.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            try {
+                if (bw != null) {
+                    bw.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            try {
+                if (fw != null) {
+                    fw.close();
                 }
             } catch (IOException e) {
                 e.printStackTrace();
