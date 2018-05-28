@@ -13,5 +13,5 @@ public abstract class AbstractWorker {
         this.client = client;
     }
 
-    public abstract void work();
+    public abstract void work(WorkerChain chain);
 }

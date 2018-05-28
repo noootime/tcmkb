@@ -29,7 +29,7 @@ public class SmartWorker extends AbstractWorker {
     }
 
     @Override
-    public void work() {
+    public void work(WorkerChain chain) {
         BufferedReader br = null;
         BufferedWriter bw = null;
         int lineNum = 0;
@@ -90,6 +90,7 @@ public class SmartWorker extends AbstractWorker {
                 finalData.append(sb).append("\n");
             }
             logger.info("共解析到字段: " + fieldsSet.toString());
+            chain.doFilter();
         } catch (IOException e) {
             e.printStackTrace();
         } finally {

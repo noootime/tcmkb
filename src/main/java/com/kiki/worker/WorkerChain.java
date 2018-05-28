@@ -3,27 +3,24 @@ package com.kiki.worker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class WorkerChain {
     private static Logger logger = LoggerFactory.getLogger(WorkerChain.class);
 
-    private List<AbstractWorker> workerList = new ArrayList<>();
+    private Queue<AbstractWorker> workerQueue = new LinkedList<>();
 
     public WorkerChain register(AbstractWorker worker) {
-        workerList.add(worker);
+        if (worker != null) {
+            workerQueue.add(worker);
+        }
         return this;
     }
 
-    public void doChain() {
-        long start = System.currentTimeMillis();
-        for (AbstractWorker worker : workerList) {
-            worker.work();
+    public void doFilter() {
+        if (!workerQueue.isEmpty()) {
+            workerQueue.poll().work(this);
         }
-        long end = System.currentTimeMillis();
-        double cost = (end - start) / (1000.00);
-        logger.info("完成任务链共耗费:" + cost + "s.");
     }
 
 }

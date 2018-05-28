@@ -34,7 +34,7 @@ public class LoginWorker extends AbstractWorker {
     }
 
     @Override
-    public void work() {
+    public void work(WorkerChain chain) {
         logger.info("开始登陆: " + loginUser);
         HttpPost loginPost = new HttpPost(UrlUtils.encodeUrlParams(LOGIN_URL));
         List<NameValuePair> loginParams = new ArrayList<NameValuePair>();
@@ -51,6 +51,7 @@ public class LoginWorker extends AbstractWorker {
             } else {
                 logger.error("登陆失败: " + EntityUtils.toString(response.getEntity(), "UTF-8"));
             }
+            chain.doFilter();
         } catch (IOException e) {
             logger.error("", e);
         } finally {

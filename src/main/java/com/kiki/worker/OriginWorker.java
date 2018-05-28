@@ -36,11 +36,12 @@ public class OriginWorker extends AbstractWorker {
     }
 
     @Override
-    public void work() {
+    public void work(WorkerChain chain) {
         try {
             pullFirstTitle();
             pullSecondTitle();
             pullThirdTitle();
+            chain.doFilter();
         } catch (Exception e) {
             e.printStackTrace();
             return;
