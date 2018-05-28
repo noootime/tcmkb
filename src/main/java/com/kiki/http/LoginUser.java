@@ -5,12 +5,12 @@ public class LoginUser {
     /**
      * 爬取数据专用，没有积分
      */
-    public static final LoginUser ACCOUNT_FOR_DATA = new LoginUser("tcmkb1", "123456");
+    public static final LoginUser ACCOUNT_FOR_DATA = new LoginUser("tcmkb2", "123456");
 
     /**
      * 更新爬取源专用，有积分
      */
-    public static final LoginUser ACCOUNT_FOR_ORIGIN = new LoginUser("tcmkb2", "123456");
+    public static final LoginUser ACCOUNT_FOR_ORIGIN = new LoginUser("tcmkb1", "123456");
 
     private String username;
     private String password;

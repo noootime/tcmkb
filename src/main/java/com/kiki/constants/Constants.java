@@ -4,7 +4,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Constants {
-    public static List<String> FIELDS = new ArrayList<>();
+    public static final String FIRST_TITLE_CSV = "first_title";
+
+    public static final String SECOND_TITLE_CSV = "second_title";
+
+    public static final String THIRD_TITLE_CSV = "third_title";
+
+    public static final List<String> FIELDS = new ArrayList<>();
     static {
         FIELDS.add("主料");
         FIELDS.add("主治");

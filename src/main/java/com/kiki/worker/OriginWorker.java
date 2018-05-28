@@ -1,5 +1,6 @@
 package com.kiki.worker;
 
+import com.kiki.constants.Constants;
 import com.kiki.constants.UrlConstants;
 import com.kiki.entity.title.FirstTitle;
 import com.kiki.entity.title.SecondTitle;
@@ -42,12 +43,11 @@ public class OriginWorker extends AbstractWorker {
             pullThirdTitle();
         } catch (Exception e) {
             e.printStackTrace();
-            // 发生异常就不要更新了
             return;
         }
-        IOUtils.writeToCsv("first_title", FIRST_TITLE, FirstTitle.class);
-        IOUtils.writeToCsv("second_title", SECOND_TITLE, SecondTitle.class);
-        IOUtils.writeToCsv("third_title", THIRD_TITLE, ThirdTitle.class);
+        IOUtils.writeToCsv(Constants.FIRST_TITLE_CSV, FIRST_TITLE, FirstTitle.class);
+        IOUtils.writeToCsv(Constants.SECOND_TITLE_CSV, SECOND_TITLE, SecondTitle.class);
+        IOUtils.writeToCsv(Constants.THIRD_TITLE_CSV, THIRD_TITLE, ThirdTitle.class);
     }
 
     private void pullFirstTitle() {
@@ -93,10 +93,11 @@ public class OriginWorker extends AbstractWorker {
         for (FirstTitle ft : FIRST_TITLE) {
             Document doc = IOUtils.executeGet(client, UrlConstants.HOST + ft.getUrl());
             if (doc == null) {
+                logger.error("一级标题[" + ft.getTitle() + "]下的二级标题拉取失败: " + ft.getUrl());
                 continue;
             }
             Elements lis = doc.getElementById("推荐").select("div.panel > div.panel-body > div.container > div.nav-pills > li");
-            System.out.println(ft.getParentTitle() + "-" + ft.getTitle() + "下的二级分类数量：" + lis.size());
+            logger.info(ft.getParentTitle() + "-" + ft.getTitle() + "下的二级分类数量：" + lis.size());
             for (Element li : lis) {
                 for (Element liChild : li.children()) {
                     SecondTitle secondTitle = new SecondTitle();
@@ -104,8 +105,6 @@ public class OriginWorker extends AbstractWorker {
                     if (Objects.equals(liChild.tagName(), "a")) {
                         secondTitle.setUrl(liChild.attr("href"));
                         secondTitle.setTitle(liChild.select("font").first().text().trim());
-                    } else {
-                        System.out.println(liChild);
                     }
                     if (secondTitle.getTitle() == null || secondTitle.getTitle().isEmpty()) {
                         secondTitle.setTitle(System.currentTimeMillis() + "");
@@ -120,11 +119,12 @@ public class OriginWorker extends AbstractWorker {
         for (SecondTitle st : SECOND_TITLE) {
             Document doc = IOUtils.executeGet(client, UrlConstants.HOST + st.getUrl());
             if (doc == null) {
+                logger.error("二级标题[" + st.getTitle() + "]下的三级标题拉取失败: " + st.getUrl());
                 continue;
             }
             Elements lis = doc.select("a.lead");
             if (lis == null || lis.isEmpty()) {
-                System.out.println("[" + st.getTitle() + "]下的三级标题为空");
+                logger.info("[" + st.getTitle() + "]下的三级标题为空");
                 continue;
             }
 
@@ -145,7 +145,7 @@ public class OriginWorker extends AbstractWorker {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-                System.out.println(st.getParentTitle() + "-" + st.getTitle() + "条数: " + count);
+                logger.info(st.getParentTitle() + "-" + st.getTitle() + "条数: " + count);
                 double pages = Math.ceil(count / 10.0);
                 if (pages > 1) {
                     for (int i = 2; i <= pages; i++) {
@@ -157,14 +157,15 @@ public class OriginWorker extends AbstractWorker {
     }
 
     private void requestThirdTitle(String url, SecondTitle st) {
-        System.out.println("翻页请求: " + url);
+        logger.info("翻页请求: " + url);
         Document doc = IOUtils.executeGet(client, UrlConstants.HOST + url);
         if (doc == null) {
+            logger.info("翻页继续拉取失败，document为空: " + url);
             return;
         }
         Elements lis = doc.select("a.lead");
         if (lis == null || lis.isEmpty()) {
-            System.out.println("[" + st.getTitle() + "]下的三级标题为空");
+            logger.info("[" + st.getTitle() + "]下的三级标题为空");
             return;
         }
 

@@ -10,6 +10,8 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.nio.charset.Charset;
@@ -20,6 +22,8 @@ import java.util.Set;
 
 public class SmartWorker extends AbstractWorker {
 
+    private static Logger logger = LoggerFactory.getLogger(SmartWorker.class);
+
     public SmartWorker(CloseableHttpClient client) {
         super(client);
     }
@@ -28,17 +32,17 @@ public class SmartWorker extends AbstractWorker {
     public void work() {
         BufferedReader br = null;
         BufferedWriter bw = null;
-        FileWriter fw = null;
         int lineNum = 0;
+        StringBuilder finalData = new StringBuilder();
         try {
             File thirdTitleCsv = new File("third_title.csv");
             br = new BufferedReader(new InputStreamReader(new FileInputStream(thirdTitleCsv), "GBK"));
             bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("data.csv"), Charset.forName("GBK")));
             Set<String> fieldsSet = new HashSet<>();
-            String line = null;
+            String line;
             // 标题行先读了
             br.readLine();
-            StringBuilder sb = null;
+            StringBuilder sb;
             bw.write("title");
             bw.write(",");
             bw.write("methodName");
@@ -58,11 +62,14 @@ public class SmartWorker extends AbstractWorker {
                 HttpGet httpGet = new HttpGet(UrlConstants.HOST + url);
                 CloseableHttpResponse response;
                 response = client.execute(httpGet);
-                System.out.println(response.getStatusLine());
+                if (response.getStatusLine().getStatusCode() != 200) {
+                    logger.warn("请求数据失败: " + url);
+                    continue;
+                }
                 String s = EntityUtils.toString(response.getEntity(), "UTF-8");
                 Document doc = Jsoup.parse(s);
                 Elements trElements = doc.select("table.table > tbody > tr");
-                sb = new StringBuilder();
+                sb = new StringBuilder().append(title).append(",").append(methodName).append(",").append(url).append(",");
                 int j = 0;
                 Map<String, String> tempMap = new HashMap<>();
                 for (Element trElement : trElements) {
@@ -74,25 +81,15 @@ public class SmartWorker extends AbstractWorker {
                         fieldsSet.add(k);
                         tempMap.put(k, v);
                     } else {
-                        System.out.println("表格td格式有变: " + trElement);
+                        logger.error("表格td格式有变: " + trElement);
                     }
                 }
                 for (String field : Constants.FIELDS) {
                     sb.append(tempMap.getOrDefault(field, " ")).append(",");
                 }
-                bw.write(title);
-                bw.write(",");
-                bw.write(methodName);
-                bw.write(",");
-                bw.write(url);
-                bw.write(",");
-                bw.write(sb.toString());
-                bw.write("\n");
+                finalData.append(sb).append("\n");
             }
-            System.out.println(fieldsSet);
-            System.out.println(fieldsSet.size());
-            fw = new FileWriter("temp");
-            fw.write(fieldsSet.toString());
+            logger.info("共解析到字段: " + fieldsSet.toString());
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
@@ -105,14 +102,8 @@ public class SmartWorker extends AbstractWorker {
             }
             try {
                 if (bw != null) {
+                    bw.write(finalData.toString());
                     bw.close();
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            try {
-                if (fw != null) {
-                    fw.close();
                 }
             } catch (IOException e) {
                 e.printStackTrace();

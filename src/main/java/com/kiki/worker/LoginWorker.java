@@ -38,18 +38,21 @@ public class LoginWorker extends AbstractWorker {
         logger.info("开始登陆: " + loginUser);
         HttpPost loginPost = new HttpPost(UrlUtils.encodeUrlParams(LOGIN_URL));
         List<NameValuePair> loginParams = new ArrayList<NameValuePair>();
-        loginParams.add(new BasicNameValuePair("username", "nsynsy002"));
-        loginParams.add(new BasicNameValuePair("password", "niu19920517"));
+        loginParams.add(new BasicNameValuePair("username", loginUser.getUsername()));
+        loginParams.add(new BasicNameValuePair("password", loginUser.getPassword()));
         CloseableHttpResponse response = null;
         try {
             UrlEncodedFormEntity entity = new UrlEncodedFormEntity(loginParams);
             loginPost.setEntity(entity);
             loginPost.setHeader("X-Requested-With", "XMLHttpRequest");
             response = client.execute(loginPost);
-            logger.info("登陆响应: \n" + response.getEntity());
-            logger.info("登陆状态: " + response.getStatusLine());
+            if (response.getStatusLine().getStatusCode() == 200) {
+                logger.info("登陆成功: " + EntityUtils.toString(response.getEntity(), "UTF-8"));
+            } else {
+                logger.error("登陆失败: " + EntityUtils.toString(response.getEntity(), "UTF-8"));
+            }
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("", e);
         } finally {
             try {
                 if (response != null) {
