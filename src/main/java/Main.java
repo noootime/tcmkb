@@ -1,7 +1,7 @@
-import com.kiki.FirstTitle;
-import com.kiki.SecondTitle;
-import com.kiki.ThirdTitle;
-import com.kiki.entity.Constants;
+import com.kiki.entity.title.FirstAbstractTitle;
+import com.kiki.entity.title.SecondAbstractTitle;
+import com.kiki.entity.title.ThirdAbstractTitle;
+import com.kiki.constants.Constants;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -35,11 +35,11 @@ public class Main {
 
     private static CloseableHttpClient httpClient;
 
-    private static final Set<FirstTitle> FIRST_TITLE = new HashSet<>();
+    private static final Set<FirstAbstractTitle> FIRST_TITLE = new HashSet<>();
 
-    private static final Set<SecondTitle> SECOND_TITLE = new HashSet<>();
+    private static final Set<SecondAbstractTitle> SECOND_TITLE = new HashSet<>();
 
-    private static final Set<ThirdTitle> THIRD_TITLE = new HashSet<>();
+    private static final Set<ThirdAbstractTitle> THIRD_TITLE = new HashSet<>();
 
     private static void createHttpClient() {
         httpClient = HttpClients.createDefault();
@@ -93,8 +93,8 @@ public class Main {
                 }
                 Elements primaryTitle = element.getElementsByClass("cont_main").select("div > p > a.lead");
                 for (Element e : primaryTitle) {
-                    FirstTitle firstTitle = new FirstTitle();
-                    firstTitle.setClassification(classification);
+                    FirstAbstractTitle firstTitle = new FirstAbstractTitle();
+                    firstTitle.setParentTitle(classification);
                     firstTitle.setTitle(e.text().trim());
                     firstTitle.setUrl(e.attr("href").trim());
                     FIRST_TITLE.add(firstTitle);
@@ -126,7 +126,7 @@ public class Main {
     }
 
     private static void requestSecondTitle() {
-        for (FirstTitle ft : FIRST_TITLE) {
+        for (FirstAbstractTitle ft : FIRST_TITLE) {
             HttpGet httpGet = new HttpGet(encodeUrl(HOST + ft.getUrl()));
             CloseableHttpResponse homeResponse = null;
             try {
@@ -135,10 +135,10 @@ public class Main {
                 String s = EntityUtils.toString(homeResponse.getEntity(), "UTF-8");
                 Document doc = Jsoup.parse(s);
                 Elements lis = doc.getElementById("推荐").select("div.panel > div.panel-body > div.container > div.nav-pills > li");
-                System.out.println(ft.getClassification() + "-" + ft.getTitle() + "下的二级分类数量：" + lis.size());
+                System.out.println(ft.getParentTitle() + "-" + ft.getTitle() + "下的二级分类数量：" + lis.size());
                 for (Element li : lis) {
                     for (Element liChild : li.children()) {
-                        SecondTitle secondTitle = new SecondTitle();
+                        SecondAbstractTitle secondTitle = new SecondAbstractTitle();
                         secondTitle.setParentTitle(ft.getTitle());
                         if (Objects.equals(liChild.tagName(), "a")) {
                             secondTitle.setUrl(liChild.attr("href"));
@@ -159,7 +159,7 @@ public class Main {
     }
 
     private static void requestThirdTitle() {
-        for (SecondTitle st : SECOND_TITLE) {
+        for (SecondAbstractTitle st : SECOND_TITLE) {
             HttpGet httpGet = new HttpGet(encodeUrl(HOST + st.getUrl()));
             CloseableHttpResponse response = null;
             try {
@@ -175,7 +175,7 @@ public class Main {
                 }
 
                 for (Element li : lis) {
-                    ThirdTitle thirdTitle = new ThirdTitle();
+                    ThirdAbstractTitle thirdTitle = new ThirdAbstractTitle();
                     thirdTitle.setParentTitle(st.getTitle());
                     thirdTitle.setTitle(li.text().trim());
                     thirdTitle.setUrl(li.attr("href").trim());
@@ -205,7 +205,7 @@ public class Main {
         }
     }
 
-    private static void requestThirdTitle(String url, SecondTitle st) {
+    private static void requestThirdTitle(String url, SecondAbstractTitle st) {
         System.out.println("翻页请求: " + url);
         try {
             HttpGet httpGet = new HttpGet(encodeUrl(HOST + url));
@@ -222,7 +222,7 @@ public class Main {
             }
 
             for (Element li : lis) {
-                ThirdTitle thirdTitle = new ThirdTitle();
+                ThirdAbstractTitle thirdTitle = new ThirdAbstractTitle();
                 thirdTitle.setParentTitle(st.getTitle());
                 thirdTitle.setTitle(li.text().trim());
                 thirdTitle.setUrl(li.attr("href").trim());
@@ -242,9 +242,9 @@ public class Main {
 //            requestThirdTitle();
             pullData();
         } finally {
-//            writeToCsv("first_title", FIRST_TITLE, FirstTitle.class);
-//            writeToCsv("second_title", SECOND_TITLE, SecondTitle.class);
-//            writeToCsv("third_title", THIRD_TITLE, ThirdTitle.class);
+//            writeToCsv("first_title", FIRST_TITLE, FirstAbstractTitle.class);
+//            writeToCsv("second_title", SECOND_TITLE, SecondAbstractTitle.class);
+//            writeToCsv("third_title", THIRD_TITLE, ThirdAbstractTitle.class);
         }
     }
 

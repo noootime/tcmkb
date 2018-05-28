@@ -1,4 +1,4 @@
-package com.kiki.entity;
+package com.kiki.constants;
 
 import java.util.ArrayList;
 import java.util.List;
