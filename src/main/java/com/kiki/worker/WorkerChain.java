@@ -8,18 +8,20 @@ import java.util.*;
 public class WorkerChain {
     private static Logger logger = LoggerFactory.getLogger(WorkerChain.class);
 
-    private Queue<AbstractWorker> workerQueue = new LinkedList<>();
+    private List<AbstractWorker> workerList = new LinkedList<>();
+
+    private int pos = 0;
 
     public WorkerChain register(AbstractWorker worker) {
         if (worker != null) {
-            workerQueue.add(worker);
+            workerList.add(worker);
         }
         return this;
     }
 
     public void doFilter() {
-        if (!workerQueue.isEmpty()) {
-            workerQueue.poll().work(this);
+        if (pos >= 0 && pos < workerList.size()) {
+            workerList.get(pos++).work(this);
         }
     }
 

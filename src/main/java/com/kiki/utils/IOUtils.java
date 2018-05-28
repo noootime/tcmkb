@@ -7,6 +7,8 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedWriter;
 import java.io.FileOutputStream;
@@ -16,11 +18,13 @@ import java.lang.reflect.Field;
 import java.util.Set;
 
 public class IOUtils {
+
+    private static Logger logger = LoggerFactory.getLogger(IOUtils.class);
+
     public static Document executeGet(CloseableHttpClient client, String url) {
         Document doc = null;
         HttpGet httpGet = new HttpGet(url);
         try (CloseableHttpResponse response = client.execute(httpGet)) {
-            System.out.println(response.getStatusLine());
             String s = EntityUtils.toString(response.getEntity(), "UTF-8");
             doc = Jsoup.parse(s);
         } catch (IOException e) {

@@ -1,11 +1,16 @@
 package com.kiki.utils;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
 
 public class UrlUtils {
+
+    private static Logger logger = LoggerFactory.getLogger(UrlUtils.class);
 
     /**
      * 编码URL参数
@@ -18,8 +23,6 @@ public class UrlUtils {
             if (url.contains("?")) {
                 String host = url.substring(0, url.indexOf("?"));
                 String paramStr = url.substring(url.indexOf("?") + 1, url.length());
-                System.out.println(host);
-                System.out.println(paramStr);
                 if (paramStr.isEmpty()) {
                     return url.substring(0, url.length() - 1);
                 }
@@ -43,7 +46,7 @@ public class UrlUtils {
                     sb.append(stringStringEntry.getKey()).append("=").append(stringStringEntry.getValue()).append("&");
                 }
                 url = host + sb.substring(0, sb.length() - 1);
-                System.out.println(url);
+                logger.info(url);
             }
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
